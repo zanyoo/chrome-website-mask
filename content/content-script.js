@@ -79,25 +79,29 @@
   function buildMaskSvg(rects, size) {
     const vw = Math.max(1, size.width);
     const vh = Math.max(1, size.height);
-    const holeRects = rects
+    const holePaths = rects
       .map((rect) => {
         const x = Math.max(0, rect.left);
         const y = Math.max(0, rect.top);
         const w = Math.max(0, Math.min(vw, rect.right) - x);
         const h = Math.max(0, Math.min(vh, rect.bottom) - y);
-        return `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="black" />`;
+        if (w <= 0 || h <= 0) return "";
+        const x2 = x + w;
+        const y2 = y + h;
+        return `M${x} ${y}H${x2}V${y2}H${x}Z`;
       })
-      .join("");
+      .filter(Boolean)
+      .join(" ");
+    const clipPath = `M0 0H${vw}V${vh}H0Z ${holePaths}`.trim();
 
     return `
 <svg xmlns="http://www.w3.org/2000/svg" width="${vw}" height="${vh}" class="wm-mask-svg">
   <defs>
-    <mask id="wm-mask" maskUnits="userSpaceOnUse">
-      <rect x="0" y="0" width="${vw}" height="${vh}" fill="white" />
-      ${holeRects}
-    </mask>
+    <clipPath id="wm-clip" clipPathUnits="userSpaceOnUse">
+      <path d="${clipPath}" clip-rule="evenodd" />
+    </clipPath>
   </defs>
-  <rect x="0" y="0" width="${vw}" height="${vh}" fill="#000" mask="url(#wm-mask)" />
+  <rect x="0" y="0" width="${vw}" height="${vh}" fill="#000" clip-path="url(#wm-clip)" />
 </svg>
 `.trim();
   }
@@ -147,7 +151,12 @@
     };
     root.style.width = `${size.width}px`;
     root.style.height = `${size.height}px`;
-    root.innerHTML = buildMaskSvg(rects, size);
+    root.innerHTML = `${buildMaskSvg(rects, size)}<div class="wm-blocker"></div>`;
+    const blocker = root.querySelector(".wm-blocker");
+    if (blocker) {
+      blocker.style.clipPath = "url(#wm-clip)";
+      blocker.style.webkitClipPath = "url(#wm-clip)";
+    }
   }
 
   function init() {
