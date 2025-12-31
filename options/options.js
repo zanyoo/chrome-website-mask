@@ -69,9 +69,7 @@
       desaturateLevel: Number(desaturateLevelInput.value || 0),
       enabled: true
     };
-    chrome.storage.sync.set({ [STORAGE_KEY]: [rule] }, () => {
-      alert("已保存规则");
-    });
+    chrome.storage.sync.set({ [STORAGE_KEY]: [rule] }, () => {});
   }
 
   frostedLevelInput.addEventListener("input", () => {
