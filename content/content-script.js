@@ -46,50 +46,55 @@
     root.innerHTML = "";
   }
 
-  function addBlock(root, rect, className) {
-    const block = document.createElement("div");
-    block.className = className;
-    block.style.left = `${rect.left}px`;
-    block.style.top = `${rect.top}px`;
-    block.style.width = `${rect.width}px`;
-    block.style.height = `${rect.height}px`;
-    root.appendChild(block);
+  function parseContentSelectors(rule) {
+    if (Array.isArray(rule.contentSelectors)) {
+      return rule.contentSelectors.map((s) => s.trim()).filter(Boolean);
+    }
+    if (typeof rule.contentSelector === "string") {
+      return rule.contentSelector
+        .split("\n")
+        .map((s) => s.trim())
+        .filter(Boolean);
+    }
+    return [];
   }
 
-  function addMaskForElement(root, el, className) {
-    if (!el) return;
-    const rect = el.getBoundingClientRect();
-    if (rect.width <= 0 || rect.height <= 0) return;
-    addBlock(root, rect, className);
+  function collectVisibleRects(selectors) {
+    const rects = [];
+    selectors.forEach((selector) => {
+      const el = document.querySelector(selector);
+      if (!el) return;
+      const rect = el.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0) return;
+      rects.push(rect);
+    });
+    return rects;
   }
 
-  function addDimWithHole(root, holeRect) {
-    const vw = document.documentElement.clientWidth;
-    const vh = document.documentElement.clientHeight;
-    const topRect = { left: 0, top: 0, width: vw, height: Math.max(0, holeRect.top) };
-    const bottomRect = {
-      left: 0,
-      top: Math.max(0, holeRect.bottom),
-      width: vw,
-      height: Math.max(0, vh - holeRect.bottom)
-    };
-    const leftRect = {
-      left: 0,
-      top: Math.max(0, holeRect.top),
-      width: Math.max(0, holeRect.left),
-      height: Math.max(0, holeRect.height)
-    };
-    const rightRect = {
-      left: Math.max(0, holeRect.right),
-      top: Math.max(0, holeRect.top),
-      width: Math.max(0, vw - holeRect.right),
-      height: Math.max(0, holeRect.height)
-    };
+  function buildMaskSvg(rects) {
+    const vw = Math.max(1, document.documentElement.clientWidth);
+    const vh = Math.max(1, document.documentElement.clientHeight);
+    const holeRects = rects
+      .map((rect) => {
+        const x = Math.max(0, rect.left);
+        const y = Math.max(0, rect.top);
+        const w = Math.max(0, Math.min(vw, rect.right) - x);
+        const h = Math.max(0, Math.min(vh, rect.bottom) - y);
+        return `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="black" />`;
+      })
+      .join("");
 
-    addBlock(root, topRect, "wm-dim-block");
-    addBlock(root, bottomRect, "wm-dim-block");
-    addBlock(root, leftRect, "wm-dim-block");
-    addBlock(root, rightRect, "wm-dim-block");
+    return `
+<svg xmlns="http://www.w3.org/2000/svg" width="${vw}" height="${vh}" class="wm-mask-svg">
+  <defs>
+    <mask id="wm-mask" maskUnits="userSpaceOnUse">
+      <rect x="0" y="0" width="${vw}" height="${vh}" fill="white" />
+      ${holeRects}
+    </mask>
+  </defs>
+  <rect x="0" y="0" width="${vw}" height="${vh}" fill="#000" mask="url(#wm-mask)" />
+</svg>
+`.trim();
   }
 
   function updateTitle(rule) {
@@ -120,24 +125,15 @@
     const root = document.getElementById("wm-overlay-root") || createOverlayRoot();
     clearOverlay(root);
 
-    const contentEl = rule.contentSelector
-      ? document.querySelector(rule.contentSelector)
-      : null;
-
     updateTitle(rule);
     updateIcon(rule);
 
-    if (contentEl) {
-      const rect = contentEl.getBoundingClientRect();
-      addDimWithHole(root, rect);
+    const selectors = parseContentSelectors(rule);
+    const rects = collectVisibleRects(selectors);
+    if (rects.length > 0) {
+      root.innerHTML = buildMaskSvg(rects);
     } else {
-      const full = {
-        left: 0,
-        top: 0,
-        width: document.documentElement.clientWidth,
-        height: document.documentElement.clientHeight
-      };
-      addBlock(root, full, "wm-dim-block");
+      root.innerHTML = buildMaskSvg([]);
     }
   }
 

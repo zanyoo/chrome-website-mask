@@ -6,7 +6,7 @@
   const urlPatternInput = document.getElementById("urlPattern");
   const titleMaskTextInput = document.getElementById("titleMaskText");
   const iconUrlInput = document.getElementById("iconUrl");
-  const contentSelectorInput = document.getElementById("contentSelector");
+  const contentSelectorsInput = document.getElementById("contentSelectors");
 
   function loadRule() {
     chrome.storage.sync.get([STORAGE_KEY], (data) => {
@@ -17,7 +17,13 @@
       urlPatternInput.value = rule.urlPattern || "";
       titleMaskTextInput.value = rule.titleMaskText || "";
       iconUrlInput.value = rule.iconUrl || "";
-      contentSelectorInput.value = rule.contentSelector || "";
+      if (Array.isArray(rule.contentSelectors)) {
+        contentSelectorsInput.value = rule.contentSelectors.join("\n");
+      } else if (rule.contentSelector) {
+        contentSelectorsInput.value = rule.contentSelector;
+      } else {
+        contentSelectorsInput.value = "";
+      }
     });
   }
 
@@ -29,7 +35,10 @@
       urlPattern: urlPatternInput.value.trim(),
       titleMaskText: titleMaskTextInput.value.trim(),
       iconUrl: iconUrlInput.value.trim(),
-      contentSelector: contentSelectorInput.value.trim(),
+      contentSelectors: contentSelectorsInput.value
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean),
       enabled: true
     };
     chrome.storage.sync.set({ [STORAGE_KEY]: [rule] }, () => {
