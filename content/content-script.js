@@ -79,6 +79,7 @@
   function buildMaskSvg(rects, size) {
     const vw = Math.max(1, size.width);
     const vh = Math.max(1, size.height);
+    const radius = 8;
     const holePaths = rects
       .map((rect) => {
         const x = Math.max(0, rect.left);
@@ -86,9 +87,21 @@
         const w = Math.max(0, Math.min(vw, rect.right) - x);
         const h = Math.max(0, Math.min(vh, rect.bottom) - y);
         if (w <= 0 || h <= 0) return "";
+        const r = Math.min(radius, Math.floor(w / 2), Math.floor(h / 2));
         const x2 = x + w;
         const y2 = y + h;
-        return `M${x} ${y}H${x2}V${y2}H${x}Z`;
+        return [
+          `M${x + r} ${y}`,
+          `H${x2 - r}`,
+          `A${r} ${r} 0 0 1 ${x2} ${y + r}`,
+          `V${y2 - r}`,
+          `A${r} ${r} 0 0 1 ${x2 - r} ${y2}`,
+          `H${x + r}`,
+          `A${r} ${r} 0 0 1 ${x} ${y2 - r}`,
+          `V${y + r}`,
+          `A${r} ${r} 0 0 1 ${x + r} ${y}`,
+          "Z"
+        ].join(" ");
       })
       .filter(Boolean)
       .join(" ");
@@ -157,9 +170,9 @@
       blocker.style.webkitClipPath = "url(#wm-clip)";
       const level = Number.isFinite(rule.frostedLevel) ? rule.frostedLevel : 10;
       const blur = Math.max(0, Math.min(20, level));
-      const alpha = 0.08 + (blur / 20) * 0.35;
       const saturate = 1 + blur / 40;
-      blocker.style.background = `rgba(255, 255, 255, ${alpha.toFixed(2)})`;
+      const color = "rgba(0, 0, 0, 0)";
+      blocker.style.background = color;
       blocker.style.backdropFilter = `blur(${blur}px) saturate(${saturate.toFixed(2)})`;
       blocker.style.webkitBackdropFilter = `blur(${blur}px) saturate(${saturate.toFixed(2)})`;
     }
