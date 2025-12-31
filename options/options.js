@@ -10,11 +10,17 @@
   const contentSelectorsInput = document.getElementById("contentSelectors");
   const frostedLevelInput = document.getElementById("frostedLevel");
   const frostedLevelValue = document.getElementById("frostedLevelValue");
+  const desaturateLevelInput = document.getElementById("desaturateLevel");
+  const desaturateLevelValue = document.getElementById("desaturateLevelValue");
   const presetIconUrl =
     "https://www.gstatic.com/images/branding/searchlogo/ico/favicon.ico";
 
   function setFrostedLevelValue(value) {
     frostedLevelValue.textContent = String(value);
+  }
+
+  function setDesaturateLevelValue(value) {
+    desaturateLevelValue.textContent = String(value);
   }
 
   function loadRule() {
@@ -36,6 +42,11 @@
       const level = Number.isFinite(rule.frostedLevel) ? rule.frostedLevel : 10;
       frostedLevelInput.value = String(level);
       setFrostedLevelValue(level);
+      const desaturateLevel = Number.isFinite(rule.desaturateLevel)
+        ? rule.desaturateLevel
+        : 0;
+      desaturateLevelInput.value = String(desaturateLevel);
+      setDesaturateLevelValue(desaturateLevel);
     });
   }
 
@@ -52,6 +63,7 @@
         .map((line) => line.trim())
         .filter(Boolean),
       frostedLevel: Number(frostedLevelInput.value || 10),
+      desaturateLevel: Number(desaturateLevelInput.value || 0),
       enabled: true
     };
     chrome.storage.sync.set({ [STORAGE_KEY]: [rule] }, () => {
@@ -61,6 +73,9 @@
 
   frostedLevelInput.addEventListener("input", () => {
     setFrostedLevelValue(frostedLevelInput.value);
+  });
+  desaturateLevelInput.addEventListener("input", () => {
+    setDesaturateLevelValue(desaturateLevelInput.value);
   });
   iconPresetButton.addEventListener("click", () => {
     iconUrlInput.value = presetIconUrl;

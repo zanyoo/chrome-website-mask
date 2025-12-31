@@ -170,11 +170,21 @@
       blocker.style.webkitClipPath = "url(#wm-clip)";
       const level = Number.isFinite(rule.frostedLevel) ? rule.frostedLevel : 10;
       const blur = Math.max(0, Math.min(20, level));
-      const saturate = 1 + blur / 40;
+      const desaturateLevel = Number.isFinite(rule.desaturateLevel)
+        ? rule.desaturateLevel
+        : 0;
+      const desaturate = Math.max(0, Math.min(20, desaturateLevel));
+      const saturate = Math.max(0, 1 - desaturate / 10);
+      const brightness = 1 + blur / 20;
       const color = "rgba(0, 0, 0, 0)";
       blocker.style.background = color;
       blocker.style.backdropFilter = `blur(${blur}px) saturate(${saturate.toFixed(2)})`;
-      blocker.style.webkitBackdropFilter = `blur(${blur}px) saturate(${saturate.toFixed(2)})`;
+      blocker.style.webkitBackdropFilter =
+        `blur(${blur}px) brightness(${brightness.toFixed(2)}) ` +
+        `saturate(${saturate.toFixed(2)})`;
+      blocker.style.backdropFilter =
+        `blur(${blur}px) brightness(${brightness.toFixed(2)}) ` +
+        `saturate(${saturate.toFixed(2)})`;
     }
   }
 
