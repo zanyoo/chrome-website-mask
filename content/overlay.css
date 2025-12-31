@@ -1,0 +1,19 @@
+#wm-overlay-root {
+  position: fixed;
+  left: 0;
+  top: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 2147483647;
+  pointer-events: none;
+}
+
+.wm-dim-block {
+  position: fixed;
+  background: rgba(0, 0, 0, 1);
+}
+
+.wm-mask-block {
+  position: fixed;
+  background: rgba(0, 0, 0, 1);
+}

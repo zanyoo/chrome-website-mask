@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "网站遮罩",
+  "version": "1.0.0",
+  "description": "对指定网站添加遮罩，支持标题、icon 和内容区域配置。",
+  "permissions": ["storage"],
+  "host_permissions": ["<all_urls>"],
+  "options_page": "options/options.html",
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content/content-script.js"],
+      "css": ["content/overlay.css"],
+      "run_at": "document_start"
+    }
+  ]
+}

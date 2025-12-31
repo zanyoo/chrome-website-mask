@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>网站遮罩配置</title>
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <main class="wrap">
+      <h1>网站遮罩配置</h1>
+      <form id="rule-form">
+        <label>
+          站点名称
+          <input type="text" id="name" placeholder="例如：新闻站" />
+        </label>
+        <label>
+          URL 规则（支持 * 通配）
+          <input type="text" id="urlPattern" placeholder="*://*.example.com/*" required />
+        </label>
+        <label>
+          标题遮罩内容（会直接替换 document.title）
+          <input type="text" id="titleMaskText" placeholder="已隐藏" />
+        </label>
+        <label>
+          Icon URL（会替换 link[rel=\"icon\"]）
+          <input type="text" id="iconUrl" placeholder="https://example.com/mask.ico" />
+        </label>
+        <label>
+          内容选择器
+          <input type="text" id="contentSelector" placeholder=".article-body" required />
+        </label>
+        <button type="submit">保存规则（仅保存 1 条示例）</button>
+      </form>
+      <section class="tip">
+        当前版本仅保存一条规则，用于展示基础效果。
+      </section>
+    </main>
+    <script src="options.js"></script>
+  </body>
+</html>
