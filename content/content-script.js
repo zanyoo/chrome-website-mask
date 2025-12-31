@@ -119,8 +119,21 @@
   }
 
   function updateTitle(rule) {
-    if (!rule.titleMaskText || rule.titleMaskText.trim() === "") return;
-    document.title = rule.titleMaskText.trim();
+    const replacement = rule.titleMaskReplacement
+      ? rule.titleMaskReplacement.trim()
+      : "";
+    const source = rule.titleMaskSource ? rule.titleMaskSource.trim() : "";
+    if (replacement === "") return;
+    if (!source) {
+      document.title = replacement;
+      return;
+    }
+    try {
+      const regex = new RegExp(source, "g");
+      document.title = document.title.replace(regex, replacement);
+    } catch (err) {
+      document.title = replacement;
+    }
   }
 
   function updateIcon(rule) {

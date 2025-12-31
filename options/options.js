@@ -4,7 +4,8 @@
   const form = document.getElementById("rule-form");
   const nameInput = document.getElementById("name");
   const urlPatternInput = document.getElementById("urlPattern");
-  const titleMaskTextInput = document.getElementById("titleMaskText");
+  const titleMaskSourceInput = document.getElementById("titleMaskSource");
+  const titleMaskReplacementInput = document.getElementById("titleMaskReplacement");
   const iconUrlInput = document.getElementById("iconUrl");
   const iconPresetButton = document.getElementById("iconPreset");
   const contentSelectorsInput = document.getElementById("contentSelectors");
@@ -30,7 +31,8 @@
       const rule = rules[0];
       nameInput.value = rule.name || "";
       urlPatternInput.value = rule.urlPattern || "";
-      titleMaskTextInput.value = rule.titleMaskText || "";
+      titleMaskSourceInput.value = rule.titleMaskSource || rule.titleMaskRegex || "";
+      titleMaskReplacementInput.value = rule.titleMaskReplacement || rule.titleMaskText || "";
       iconUrlInput.value = rule.iconUrl || "";
       if (Array.isArray(rule.contentSelectors)) {
         contentSelectorsInput.value = rule.contentSelectors.join("\n");
@@ -56,7 +58,8 @@
       id: "demo-rule",
       name: nameInput.value.trim(),
       urlPattern: urlPatternInput.value.trim(),
-      titleMaskText: titleMaskTextInput.value.trim(),
+      titleMaskSource: titleMaskSourceInput.value.trim(),
+      titleMaskReplacement: titleMaskReplacementInput.value.trim(),
       iconUrl: iconUrlInput.value.trim(),
       contentSelectors: contentSelectorsInput.value
         .split("\n")

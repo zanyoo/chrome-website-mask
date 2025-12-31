@@ -19,8 +19,12 @@
           <input type="text" id="urlPattern" placeholder="*://*.example.com/*" required />
         </label>
         <label>
-          标题遮罩内容（会直接替换 document.title）
-          <input type="text" id="titleMaskText" placeholder="已隐藏" />
+          标题原始内容（支持正则，留空则全文替换）
+          <input type="text" id="titleMaskSource" placeholder="(.*)" />
+        </label>
+        <label>
+          标题替换内容
+          <input type="text" id="titleMaskReplacement" placeholder="已隐藏" />
         </label>
         <label>
           Icon URL（会替换 link[rel=\"icon\"]）
