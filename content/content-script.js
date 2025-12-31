@@ -66,14 +66,19 @@
       if (!el) return;
       const rect = el.getBoundingClientRect();
       if (rect.width <= 0 || rect.height <= 0) return;
-      rects.push(rect);
+      rects.push({
+        left: rect.left + window.scrollX,
+        top: rect.top + window.scrollY,
+        right: rect.right + window.scrollX,
+        bottom: rect.bottom + window.scrollY
+      });
     });
     return rects;
   }
 
-  function buildMaskSvg(rects) {
-    const vw = Math.max(1, document.documentElement.clientWidth);
-    const vh = Math.max(1, document.documentElement.clientHeight);
+  function buildMaskSvg(rects, size) {
+    const vw = Math.max(1, size.width);
+    const vh = Math.max(1, size.height);
     const holeRects = rects
       .map((rect) => {
         const x = Math.max(0, rect.left);
@@ -130,11 +135,19 @@
 
     const selectors = parseContentSelectors(rule);
     const rects = collectVisibleRects(selectors);
-    if (rects.length > 0) {
-      root.innerHTML = buildMaskSvg(rects);
-    } else {
-      root.innerHTML = buildMaskSvg([]);
-    }
+    const size = {
+      width: Math.max(
+        document.documentElement.scrollWidth,
+        document.documentElement.clientWidth
+      ),
+      height: Math.max(
+        document.documentElement.scrollHeight,
+        document.documentElement.clientHeight
+      )
+    };
+    root.style.width = `${size.width}px`;
+    root.style.height = `${size.height}px`;
+    root.innerHTML = buildMaskSvg(rects, size);
   }
 
   function init() {
