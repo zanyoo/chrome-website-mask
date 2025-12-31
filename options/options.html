@@ -24,7 +24,15 @@
         </label>
         <label>
           Icon URL（会替换 link[rel=\"icon\"]）
-          <input type="text" id="iconUrl" placeholder="https://example.com/mask.ico" />
+          <div class="inline-row">
+            <input type="text" id="iconUrl" placeholder="https://example.com/mask.ico" />
+            <button type="button" id="iconPreset" class="icon-btn" title="使用预设 Icon">
+              <img
+                src="https://www.gstatic.com/images/branding/searchlogo/ico/favicon.ico"
+                alt="预设 Icon"
+              />
+            </button>
+          </div>
         </label>
         <label>
           内容选择器

@@ -6,9 +6,12 @@
   const urlPatternInput = document.getElementById("urlPattern");
   const titleMaskTextInput = document.getElementById("titleMaskText");
   const iconUrlInput = document.getElementById("iconUrl");
+  const iconPresetButton = document.getElementById("iconPreset");
   const contentSelectorsInput = document.getElementById("contentSelectors");
   const frostedLevelInput = document.getElementById("frostedLevel");
   const frostedLevelValue = document.getElementById("frostedLevelValue");
+  const presetIconUrl =
+    "https://www.gstatic.com/images/branding/searchlogo/ico/favicon.ico";
 
   function setFrostedLevelValue(value) {
     frostedLevelValue.textContent = String(value);
@@ -58,6 +61,9 @@
 
   frostedLevelInput.addEventListener("input", () => {
     setFrostedLevelValue(frostedLevelInput.value);
+  });
+  iconPresetButton.addEventListener("click", () => {
+    iconUrlInput.value = presetIconUrl;
   });
   form.addEventListener("submit", saveRule);
   loadRule();
