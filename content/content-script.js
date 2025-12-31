@@ -101,7 +101,6 @@
       <path d="${clipPath}" clip-rule="evenodd" />
     </clipPath>
   </defs>
-  <rect x="0" y="0" width="${vw}" height="${vh}" fill="#000" clip-path="url(#wm-clip)" />
 </svg>
 `.trim();
   }
@@ -156,6 +155,13 @@
     if (blocker) {
       blocker.style.clipPath = "url(#wm-clip)";
       blocker.style.webkitClipPath = "url(#wm-clip)";
+      const level = Number.isFinite(rule.frostedLevel) ? rule.frostedLevel : 10;
+      const blur = Math.max(0, Math.min(20, level));
+      const alpha = 0.08 + (blur / 20) * 0.35;
+      const saturate = 1 + blur / 40;
+      blocker.style.background = `rgba(255, 255, 255, ${alpha.toFixed(2)})`;
+      blocker.style.backdropFilter = `blur(${blur}px) saturate(${saturate.toFixed(2)})`;
+      blocker.style.webkitBackdropFilter = `blur(${blur}px) saturate(${saturate.toFixed(2)})`;
     }
   }
 

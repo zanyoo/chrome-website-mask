@@ -23,6 +23,19 @@ textarea {
   border-radius: 8px;
   font-family: inherit;
 }
+.range-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.range-row input[type="range"] {
+  flex: 1;
+}
+.range-row span {
+  min-width: 28px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
 .inline { display: flex; align-items: center; gap: 8px; }
 button {
   padding: 10px 14px;
