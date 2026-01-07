@@ -6,19 +6,106 @@
     return input.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   }
 
-  function matchPattern(url, pattern) {
-    if (!pattern || pattern.trim() === "") return false;
-    const escaped = escapeRegex(pattern).replace(/\\\*/g, ".*");
+  function parseRegexPattern(pattern) {
+    if (pattern.startsWith("re:")) {
+      return { source: pattern.slice(3), flags: "" };
+    }
+    if (pattern.startsWith("/") && pattern.length > 2) {
+      const last = pattern.lastIndexOf("/");
+      if (last > 0) {
+        return {
+          source: pattern.slice(1, last),
+          flags: pattern.slice(last + 1)
+        };
+      }
+    }
+    return null;
+  }
+
+  function countWildcards(pattern) {
+    return (pattern.match(/\*/g) || []).length;
+  }
+
+  function getDomainSpecificity(pattern) {
+    const schemeIndex = pattern.indexOf("://");
+    if (schemeIndex === -1) return 0;
+    const hostStart = schemeIndex + 3;
+    const hostEnd = pattern.indexOf("/", hostStart);
+    const host = (hostEnd === -1 ? pattern.slice(hostStart) : pattern.slice(hostStart, hostEnd))
+      .trim();
+    if (!host) return 0;
+    return host
+      .split(".")
+      .filter((part) => part && !part.includes("*")).length;
+  }
+
+  function getPathLength(pattern) {
+    const schemeIndex = pattern.indexOf("://");
+    const hostStart = schemeIndex === -1 ? 0 : schemeIndex + 3;
+    const pathIndex = pattern.indexOf("/", hostStart);
+    if (pathIndex === -1) return 0;
+    return pattern.slice(pathIndex).replace(/\*/g, "").length;
+  }
+
+  function matchRegex(url, pattern) {
+    const parsed = parseRegexPattern(pattern);
+    if (!parsed) return null;
+    try {
+      const regex = new RegExp(parsed.source, parsed.flags || "");
+      return regex.test(url) ? 100 : null;
+    } catch (err) {
+      return null;
+    }
+  }
+
+  function getMatchScore(url, pattern) {
+    if (!pattern || pattern.trim() === "") return null;
+    const trimmed = pattern.trim();
+
+    const regexScore = matchRegex(url, trimmed);
+    if (regexScore !== null) return regexScore;
+
+    const hasWildcard = trimmed.includes("*");
+    if (!hasWildcard && url === trimmed) {
+      return 400 + getPathLength(trimmed) + getDomainSpecificity(trimmed) * 10;
+    }
+
+    if (!hasWildcard) return null;
+
+    const isPrefix = trimmed.endsWith("*") && trimmed.indexOf("*") === trimmed.length - 1;
+    if (isPrefix && url.startsWith(trimmed.slice(0, -1))) {
+      return (
+        300 +
+        getPathLength(trimmed) -
+        countWildcards(trimmed) * 5 +
+        getDomainSpecificity(trimmed) * 10
+      );
+    }
+
+    const escaped = escapeRegex(trimmed).replace(/\\\*/g, ".*");
     const regex = new RegExp(`^${escaped}$`);
-    return regex.test(url);
+    if (!regex.test(url)) return null;
+    return (
+      200 +
+      getPathLength(trimmed) -
+      countWildcards(trimmed) * 5 +
+      getDomainSpecificity(trimmed) * 10
+    );
   }
 
   function pickRule(rules, url) {
+    let best = null;
+    let bestScore = -Infinity;
     for (const rule of rules) {
       if (rule.enabled === false) continue;
-      if (matchPattern(url, rule.urlPattern)) return rule;
+      const score = getMatchScore(url, rule.urlPattern || "");
+      if (score === null) continue;
+      if (score > bestScore) {
+        best = rule;
+        bestScore = score;
+      }
     }
-    return null;
+    return best;
   }
 
   function createOverlayRoot() {

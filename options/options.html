@@ -8,60 +8,94 @@
   </head>
   <body>
     <main class="wrap">
-      <h1>网站遮罩配置</h1>
-      <form id="rule-form">
-        <label>
-          站点名称
-          <input type="text" id="name" placeholder="例如：新闻站" />
-        </label>
-        <label>
-          URL 规则（支持 * 通配）
-          <input type="text" id="urlPattern" placeholder="*://*.example.com/*" required />
-        </label>
-        <label>
-          标题原始内容（支持正则，留空则全文替换）
-          <input type="text" id="titleMaskSource" placeholder="(.*)" />
-        </label>
-        <label>
-          标题替换内容
-          <input type="text" id="titleMaskReplacement" placeholder="已隐藏" />
-        </label>
-        <label>
-          Icon URL（会替换 link[rel=\"icon\"]）
-          <div class="inline-row">
-            <input type="text" id="iconUrl" placeholder="https://example.com/mask.ico" />
-            <button type="button" id="iconPreset" class="icon-btn" title="使用预设 Icon">
-              <img
-                src="https://www.gstatic.com/images/branding/searchlogo/ico/favicon.ico"
-                alt="预设 Icon"
-              />
-            </button>
+      <header class="head">
+        <h1>网站遮罩配置</h1>
+      </header>
+      <section class="list">
+        <div class="list-head">
+          <h2>配置列表</h2>
+          <div class="list-actions">
+            <button type="button" id="addRule" class="primary-btn">新增</button>
+            <button type="button" id="editRule" class="ghost-btn edit-btn" disabled>编辑</button>
+            <button type="button" id="toggleRule" class="ghost-btn toggle-btn" disabled>禁用</button>
+            <button type="button" id="deleteRule" class="ghost-btn danger-btn" disabled>删除</button>
           </div>
-        </label>
-        <label>
-          内容选择器
-          <textarea id="contentSelectors" placeholder=".article-body&#10;.main-content" rows="4" required></textarea>
-        </label>
-        <label>
-          毛玻璃强度
-          <div class="range-row">
-            <input type="range" id="frostedLevel" min="0" max="20" step="1" />
-            <span id="frostedLevelValue">10</span>
-          </div>
-        </label>
-        <label>
-          去色强度
-          <div class="range-row">
-            <input type="range" id="desaturateLevel" min="0" max="20" step="1" />
-            <span id="desaturateLevelValue">0</span>
-          </div>
-        </label>
-        <button type="submit">保存规则（仅保存 1 条示例）</button>
-      </form>
-      <section class="tip">
-        当前版本仅保存一条规则，用于展示基础效果。
+        </div>
+        <table class="rule-table">
+          <thead>
+            <tr>
+              <th>名称</th>
+              <th>URL 规则</th>
+              <th>状态</th>
+            </tr>
+          </thead>
+          <tbody id="ruleList"></tbody>
+        </table>
+        <p id="emptyState" class="empty">暂无配置，请先新增。</p>
       </section>
     </main>
+
+    <div id="modal" class="modal" aria-hidden="true">
+      <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="formTitle">
+        <header class="modal-head">
+          <h2 id="formTitle">编辑配置</h2>
+          <button type="button" id="closeModal" class="icon-close" aria-label="关闭">×</button>
+        </header>
+        <form id="rule-form" class="modal-body">
+          <label>
+            站点名称
+            <input type="text" id="name" placeholder="例如：新闻站" />
+          </label>
+          <label>
+            URL 规则（支持 * 通配；正则可用 re: 或 /pattern/flags）
+            <input type="text" id="urlPattern" placeholder="*://*.example.com/*" required />
+          </label>
+          <label>
+            标题原始内容（支持正则，留空则全文替换）
+            <input type="text" id="titleMaskSource" placeholder="(.*)" />
+          </label>
+          <label>
+            标题替换内容
+            <input type="text" id="titleMaskReplacement" placeholder="已隐藏" />
+          </label>
+          <label>
+            Icon URL（会替换 link[rel=\"icon\"]）
+            <div class="inline-row">
+              <input type="text" id="iconUrl" placeholder="https://example.com/mask.ico" />
+              <button type="button" id="iconPreset" class="icon-btn" title="使用预设 Icon">
+                <img
+                  src="https://www.gstatic.com/images/branding/searchlogo/ico/favicon.ico"
+                  alt="预设 Icon"
+                />
+              </button>
+            </div>
+          </label>
+          <label>
+            内容选择器
+            <textarea id="contentSelectors" placeholder=".article-body\n.main-content" rows="4" required></textarea>
+          </label>
+          <label>
+            毛玻璃强度
+            <div class="range-row">
+              <input type="range" id="frostedLevel" min="0" max="20" step="1" />
+              <span id="frostedLevelValue">10</span>
+            </div>
+          </label>
+          <label>
+            去色强度
+            <div class="range-row">
+              <input type="range" id="desaturateLevel" min="0" max="20" step="1" />
+              <span id="desaturateLevelValue">0</span>
+            </div>
+          </label>
+          <div class="actions">
+            <button type="submit" class="primary-btn">保存</button>
+            <button type="button" id="resetForm">重置</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
     <script src="options.js"></script>
   </body>
 </html>
