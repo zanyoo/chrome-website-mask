@@ -17,7 +17,6 @@
           <div class="list-actions">
             <button type="button" id="addRule" class="primary-btn">新增</button>
             <button type="button" id="editRule" class="ghost-btn edit-btn" disabled>编辑</button>
-            <button type="button" id="toggleRule" class="ghost-btn toggle-btn" disabled>禁用</button>
             <button type="button" id="deleteRule" class="ghost-btn danger-btn" disabled>删除</button>
           </div>
         </div>
@@ -25,8 +24,7 @@
           <thead>
             <tr>
               <th>名称</th>
-              <th>URL 规则</th>
-              <th>状态</th>
+              <th class="col-status">状态</th>
             </tr>
           </thead>
           <tbody id="ruleList"></tbody>
@@ -47,16 +45,12 @@
             <input type="text" id="name" placeholder="例如：新闻站" />
           </label>
           <label>
-            URL 规则（支持 * 通配；正则可用 re: 或 /pattern/flags）
+            URL 规则（支持 * 通配；正则可用 /pattern/flags）
             <input type="text" id="urlPattern" placeholder="*://*.example.com/*" required />
           </label>
           <label>
-            标题原始内容（支持正则，留空则全文替换）
-            <input type="text" id="titleMaskSource" placeholder="(.*)" />
-          </label>
-          <label>
-            标题替换内容
-            <input type="text" id="titleMaskReplacement" placeholder="已隐藏" />
+            标题替换规则（/原始/替换/flags）
+            <input type="text" id="titleMaskExpression" placeholder="/.*/已隐藏/" />
           </label>
           <label>
             Icon URL（会替换 link[rel=\"icon\"]）

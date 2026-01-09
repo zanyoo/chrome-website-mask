@@ -11,12 +11,10 @@
   const closeModalButton = document.getElementById("closeModal");
   const editRuleButton = document.getElementById("editRule");
   const deleteRuleButton = document.getElementById("deleteRule");
-  const toggleRuleButton = document.getElementById("toggleRule");
 
   const nameInput = document.getElementById("name");
   const urlPatternInput = document.getElementById("urlPattern");
-  const titleMaskSourceInput = document.getElementById("titleMaskSource");
-  const titleMaskReplacementInput = document.getElementById("titleMaskReplacement");
+  const titleMaskExpressionInput = document.getElementById("titleMaskExpression");
   const iconUrlInput = document.getElementById("iconUrl");
   const iconPresetButton = document.getElementById("iconPreset");
   const contentSelectorsInput = document.getElementById("contentSelectors");
@@ -48,12 +46,23 @@
       /^[a-z]+:\/\/[^/]+$/.test(rawPattern.trim()) && !rawPattern.trim().endsWith("/")
         ? `${rawPattern.trim()}/`
         : rawPattern;
+    let titleMaskExpression = rule.titleMaskExpression || "";
+    if (!titleMaskExpression) {
+      const source = rule.titleMaskSource || rule.titleMaskRegex || "";
+      const replacement = rule.titleMaskReplacement || rule.titleMaskText || "";
+      if (replacement) {
+        if (source) {
+          titleMaskExpression = `/${source}/${replacement}/g`;
+        } else {
+          titleMaskExpression = `/.*/${replacement}/`;
+        }
+      }
+    }
     return {
       id: rule.id || generateId(),
       name: rule.name || "",
       urlPattern: normalizedPattern,
-      titleMaskSource: rule.titleMaskSource || rule.titleMaskRegex || "",
-      titleMaskReplacement: rule.titleMaskReplacement || rule.titleMaskText || "",
+      titleMaskExpression,
       iconUrl: rule.iconUrl || "",
       contentSelectors: Array.isArray(rule.contentSelectors)
         ? rule.contentSelectors
@@ -83,7 +92,6 @@
       emptyState.style.display = "block";
       editRuleButton.disabled = true;
       deleteRuleButton.disabled = true;
-      toggleRuleButton.disabled = true;
       return;
     }
     emptyState.style.display = "none";
@@ -99,30 +107,18 @@
       nameSpan.textContent = rule.name || rule.urlPattern || "未命名配置";
       nameCell.appendChild(nameSpan);
 
-      const urlCell = document.createElement("td");
-      const urlSpan = document.createElement("span");
-      urlSpan.className = "rule-sub";
-      urlSpan.textContent = rule.urlPattern || "未设置 URL 规则";
-      urlCell.appendChild(urlSpan);
-
       const statusCell = document.createElement("td");
-      statusCell.textContent = rule.enabled ? "启用" : "停用";
+      statusCell.className = "col-status";
+      const toggle = document.createElement("input");
+      toggle.type = "checkbox";
+      toggle.className = "status-toggle";
+      toggle.checked = rule.enabled;
+      toggle.dataset.action = "toggle";
+      statusCell.appendChild(toggle);
 
-      row.append(nameCell, urlCell, statusCell);
+      row.append(nameCell, statusCell);
       ruleList.appendChild(row);
     });
-    updateToggleButton();
-  }
-
-  function updateToggleButton() {
-    const rule = rules.find((item) => item.id === currentId);
-    if (!rule) {
-      toggleRuleButton.disabled = true;
-      toggleRuleButton.textContent = "禁用";
-      return;
-    }
-    toggleRuleButton.disabled = false;
-    toggleRuleButton.textContent = rule.enabled ? "禁用" : "启用";
   }
 
   function openModal(title) {
@@ -140,8 +136,7 @@
     currentId = rule.id;
     nameInput.value = rule.name;
     urlPatternInput.value = rule.urlPattern;
-    titleMaskSourceInput.value = rule.titleMaskSource;
-    titleMaskReplacementInput.value = rule.titleMaskReplacement;
+    titleMaskExpressionInput.value = rule.titleMaskExpression;
     iconUrlInput.value = rule.iconUrl;
     contentSelectorsInput.value = rule.contentSelectors.join("\n");
     frostedLevelInput.value = String(rule.frostedLevel);
@@ -154,8 +149,7 @@
     currentId = null;
     nameInput.value = "";
     urlPatternInput.value = "";
-    titleMaskSourceInput.value = "";
-    titleMaskReplacementInput.value = "";
+    titleMaskExpressionInput.value = "";
     iconUrlInput.value = "";
     contentSelectorsInput.value = "";
     frostedLevelInput.value = "10";
@@ -175,8 +169,7 @@
       id: currentId || generateId(),
       name: nameInput.value.trim(),
       urlPattern: normalizedPattern,
-      titleMaskSource: titleMaskSourceInput.value.trim(),
-      titleMaskReplacement: titleMaskReplacementInput.value.trim(),
+      titleMaskExpression: titleMaskExpressionInput.value.trim(),
       iconUrl: iconUrlInput.value.trim(),
       contentSelectors: contentSelectorsInput.value
         .split("\n")
@@ -208,7 +201,6 @@
     }
     editRuleButton.disabled = rules.length === 0;
     deleteRuleButton.disabled = rules.length === 0;
-    toggleRuleButton.disabled = rules.length === 0;
     renderList();
   }
 
@@ -218,7 +210,6 @@
       currentId = rules[0] ? rules[0].id : null;
       editRuleButton.disabled = !currentId;
       deleteRuleButton.disabled = !currentId;
-      toggleRuleButton.disabled = !currentId;
       renderList();
     });
   }
@@ -226,6 +217,9 @@
   ruleList.addEventListener("click", (event) => {
     const target = event.target;
     if (!(target instanceof HTMLElement)) return;
+    if (target instanceof HTMLInputElement && target.dataset.action === "toggle") {
+      return;
+    }
     const row = target.closest("tr");
     if (!row) return;
     const id = row.dataset.id;
@@ -233,7 +227,6 @@
     currentId = id;
     editRuleButton.disabled = false;
     deleteRuleButton.disabled = false;
-    toggleRuleButton.disabled = false;
     renderList();
   });
 
@@ -272,10 +265,18 @@
     deleteRule(currentId);
   });
 
-  toggleRuleButton.addEventListener("click", () => {
-    const rule = rules.find((item) => item.id === currentId);
+  ruleList.addEventListener("change", (event) => {
+    const target = event.target;
+    if (!(target instanceof HTMLInputElement)) return;
+    if (target.dataset.action !== "toggle") return;
+    const row = target.closest("tr");
+    if (!row) return;
+    const id = row.dataset.id;
+    if (!id) return;
+    const rule = rules.find((item) => item.id === id);
     if (!rule) return;
-    rule.enabled = !rule.enabled;
+    rule.enabled = target.checked;
+    currentId = id;
     saveRules(rules);
     renderList();
   });

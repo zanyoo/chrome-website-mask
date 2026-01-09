@@ -7,9 +7,6 @@
   }
 
   function parseRegexPattern(pattern) {
-    if (pattern.startsWith("re:")) {
-      return { source: pattern.slice(3), flags: "" };
-    }
     if (pattern.startsWith("/") && pattern.length > 2) {
       const last = pattern.lastIndexOf("/");
       if (last > 0) {
@@ -20,6 +17,37 @@
       }
     }
     return null;
+  }
+
+  function parseSubstitutionExpression(expression) {
+    if (!expression || !expression.startsWith("/")) return null;
+    const text = expression;
+    let i = 1;
+    let pattern = "";
+    let replacement = "";
+    let flags = "";
+    let foundFirst = false;
+    for (; i < text.length; i++) {
+      const ch = text[i];
+      if (ch === "/" && text[i - 1] !== "\\") {
+        foundFirst = true;
+        i += 1;
+        break;
+      }
+      pattern += ch;
+    }
+    if (!foundFirst) return null;
+    for (; i < text.length; i++) {
+      const ch = text[i];
+      if (ch === "/" && text[i - 1] !== "\\") {
+        i += 1;
+        break;
+      }
+      replacement += ch;
+    }
+    flags = text.slice(i);
+    if (pattern === "") pattern = ".*";
+    return { pattern, replacement, flags };
   }
 
   function countWildcards(pattern) {
@@ -146,6 +174,19 @@
     return [];
   }
 
+  function parseContentEntries(rule) {
+    const selectors = parseContentSelectors(rule);
+    return selectors
+      .map((entry) => {
+        const index = entry.indexOf("#/");
+        if (index === -1) return { selector: entry.trim(), replace: null };
+        const selector = entry.slice(0, index).trim();
+        const expr = entry.slice(index + 1).trim();
+        return { selector, replace: expr || null };
+      })
+      .filter((item) => item.selector);
+  }
+
   function collectVisibleRects(selectors) {
     const rects = [];
     selectors.forEach((selector) => {
@@ -161,6 +202,40 @@
       });
     });
     return rects;
+  }
+
+  function applyReplacementToElement(element, regex, replacement) {
+    const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT, null);
+    const nodes = [];
+    while (walker.nextNode()) {
+      nodes.push(walker.currentNode);
+    }
+    nodes.forEach((node) => {
+      const original = node.nodeValue;
+      if (!original) return;
+      const next = original.replace(regex, replacement);
+      if (next !== original) node.nodeValue = next;
+    });
+  }
+
+  function applyContentReplacements(rule, entries) {
+    const ruleId = rule.id || "default";
+    entries.forEach((entry) => {
+      if (!entry.replace) return;
+      const element = document.querySelector(entry.selector);
+      if (!element) return;
+      if (element.getAttribute("data-wm-replace-id") === ruleId) return;
+      const parsed = parseSubstitutionExpression(entry.replace);
+      if (!parsed) return;
+      try {
+        const flags = parsed.flags || "g";
+        const regex = new RegExp(parsed.pattern, flags);
+        applyReplacementToElement(element, regex, parsed.replacement);
+        element.setAttribute("data-wm-replace-id", ruleId);
+      } catch (err) {
+        return;
+      }
+    });
   }
 
   function buildMaskSvg(rects, size) {
@@ -206,21 +281,38 @@
   }
 
   function updateTitle(rule) {
-    const replacement = rule.titleMaskReplacement
-      ? rule.titleMaskReplacement.trim()
+    const expression = rule.titleMaskExpression
+      ? rule.titleMaskExpression.trim()
       : "";
-    const source = rule.titleMaskSource ? rule.titleMaskSource.trim() : "";
-    if (replacement === "") return;
-    if (!source) {
-      document.title = replacement;
+    if (!expression) return;
+    const parsed = parseSubstitutionExpression(expression);
+    if (!parsed) return;
+    try {
+      const flags = parsed.flags || "g";
+      const regex = new RegExp(parsed.pattern, flags);
+      const current = document.title;
+      const next = current.replace(regex, parsed.replacement);
+      if (next !== current) {
+        document.title = next;
+      }
+    } catch (err) {
       return;
     }
-    try {
-      const regex = new RegExp(source, "g");
-      document.title = document.title.replace(regex, replacement);
-    } catch (err) {
-      document.title = replacement;
-    }
+  }
+
+  function startTitleObserver(rule) {
+    const expression = rule.titleMaskExpression
+      ? rule.titleMaskExpression.trim()
+      : "";
+    if (!expression) return;
+    if (startTitleObserver.observer) return;
+    const titleEl = document.querySelector("title");
+    if (!titleEl) return;
+    const observer = new MutationObserver(() => {
+      updateTitle(rule);
+    });
+    observer.observe(titleEl, { childList: true, characterData: true, subtree: true });
+    startTitleObserver.observer = observer;
   }
 
   function updateIcon(rule) {
@@ -249,8 +341,10 @@
     updateTitle(rule);
     updateIcon(rule);
 
-    const selectors = parseContentSelectors(rule);
+    const entries = parseContentEntries(rule);
+    const selectors = entries.map((item) => item.selector);
     const rects = collectVisibleRects(selectors);
+    applyContentReplacements(rule, entries);
     const size = {
       width: Math.max(
         document.documentElement.scrollWidth,
@@ -302,6 +396,7 @@
       const apply = () => {
         renderMask(rule);
         removeHideStyle();
+        startTitleObserver(rule);
       };
       if (document.readyState === "loading") {
         document.addEventListener("DOMContentLoaded", apply, { once: true });
